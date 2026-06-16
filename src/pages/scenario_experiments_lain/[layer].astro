@@ -1,0 +1,221 @@
+---
+import { Font } from 'astro:assets';
+import { getCollection, render } from 'astro:content';
+import Layout from '../../layouts/Layout.astro';
+
+export async function getStaticPaths() {
+	const entries = await getCollection('lain');
+
+	return entries.map((entry) => ({
+		params: { layer: entry.id },
+		props: { entry },
+	}));
+}
+
+const { entry } = Astro.props;
+const entries = (await getCollection('lain')).sort((a, b) => {
+	const aOrder = a.data.order ?? Number(a.id.match(/\d+/)?.[0] ?? 999);
+	const bOrder = b.data.order ?? Number(b.id.match(/\d+/)?.[0] ?? 999);
+	return aOrder - bOrder || a.id.localeCompare(b.id);
+});
+const currentIndex = entries.findIndex((item) => item.id === entry.id);
+const previous = entries[currentIndex - 1];
+const next = entries[currentIndex + 1];
+const { Content } = await render(entry);
+
+function entryTitle(id: string, title?: string) {
+	if (title) return title;
+	if (id === 'note') return '解説';
+	return id.replace(/^layer(\d+)$/, 'Layer $1');
+}
+
+const title = entryTitle(entry.id, entry.data.title);
+---
+
+<Layout title={`${title} | Scenario Experiments Lain`}>
+	<Fragment slot="head">
+		<Font cssVariable="--font-lain-serif" />
+		<Font cssVariable="--font-lain-sans" />
+	</Fragment>
+
+	<main class="markdown-page">
+		<div class="reader-chrome">
+			<nav class="breadcrumbs" aria-label="Breadcrumb">
+				<a href="/scenario_experiments_lain/">Scenario Experiments Lain</a>
+			</nav>
+
+			<nav class="pager" aria-label="Layer navigation">
+				{
+					previous ? (
+						<a href={`/scenario_experiments_lain/${previous.id}/`}>
+							<span>Previous</span>
+							{entryTitle(previous.id, previous.data.title)}
+						</a>
+					) : (
+						<span />
+					)
+				}
+				{
+					next ? (
+						<a href={`/scenario_experiments_lain/${next.id}/`}>
+							<span>Next</span>
+							{entryTitle(next.id, next.data.title)}
+						</a>
+					) : (
+						<span />
+					)
+				}
+			</nav>
+		</div>
+
+		<article class="reader">
+			<header>
+				<h1>{title}</h1>
+			</header>
+			<Content />
+		</article>
+	</main>
+</Layout>
+
+<style is:global>
+	.markdown-page {
+		box-sizing: border-box;
+		height: 100svh;
+		overflow-x: auto;
+		overflow-y: hidden;
+		direction: rtl;
+		scroll-snap-type: x proximity;
+		margin: 0;
+		padding: 1.25rem;
+		background: #f6f4ef;
+		color: #171717;
+		font-family:
+			var(--font-lain-serif),
+			"Yu Mincho",
+			"Hiragino Mincho ProN",
+			serif;
+	}
+
+	.reader-chrome {
+		position: sticky;
+		left: 0;
+		z-index: 1;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		direction: ltr;
+		writing-mode: horizontal-tb;
+		margin-bottom: 1rem;
+		font-family:
+			system-ui,
+			-apple-system,
+			BlinkMacSystemFont,
+			"Segoe UI",
+			sans-serif;
+		font-size: 0.875rem;
+	}
+
+	.reader {
+		box-sizing: border-box;
+		width: max-content;
+		min-width: calc(100vw - 2.5rem);
+		height: calc(100svh - 5.75rem);
+		direction: ltr;
+		writing-mode: vertical-rl;
+		text-orientation: mixed;
+		scroll-snap-align: end;
+		padding: 1.75rem 2rem;
+		border: 1px solid #d8d2c5;
+		background: #fffdf7;
+		line-height: 2;
+	}
+
+	.reader h1,
+	.reader h2,
+	.reader h3,
+	.reader h4 {
+		line-height: 1.3;
+		letter-spacing: 0;
+		font-family:
+			var(--font-lain-sans),
+			"Yu Gothic",
+			"Hiragino Sans",
+			sans-serif;
+		font-weight: 400;
+	}
+
+	.reader h1 {
+		margin: 0 0 0 2rem;
+		font-size: 2.5rem;
+	}
+
+	.reader h4 {
+		margin: 0 0 0 1.5rem;
+		font-size: 1rem;
+	}
+
+	.reader p,
+	.reader li {
+		white-space: pre-wrap;
+		margin: 0 0 0 1.25rem;
+	}
+
+	.reader .script-indent {
+		text-indent: var(--script-indent, 4em);
+	}
+
+	.reader img {
+		display: block;
+		max-width: 24rem;
+		max-height: 100%;
+		height: auto;
+		margin: 0 0 0 1.5rem;
+		object-fit: contain;
+	}
+
+	.reader hr {
+		width: 0;
+		height: 100%;
+		margin: 0 1.5rem;
+		border: 0;
+		border-left: 1px solid #d8d2c5;
+	}
+
+	.pager {
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+		gap: 1rem;
+	}
+
+	.breadcrumbs a,
+	.pager a {
+		color: inherit;
+		text-decoration-thickness: 0.08em;
+		text-underline-offset: 0.18em;
+	}
+
+	.pager span {
+		color: #666;
+		font-size: 0.75rem;
+		text-transform: uppercase;
+	}
+
+	@media (max-width: 720px) {
+		.markdown-page {
+			padding: 0.75rem;
+		}
+
+		.reader-chrome {
+			align-items: flex-start;
+			flex-direction: column;
+		}
+
+		.reader {
+			min-width: calc(100vw - 1.5rem);
+			height: calc(100svh - 7rem);
+			padding: 1.25rem;
+		}
+	}
+</style>

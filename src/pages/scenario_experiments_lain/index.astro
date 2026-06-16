@@ -1,0 +1,67 @@
+---
+import { getCollection } from 'astro:content';
+import Layout from '../../layouts/Layout.astro';
+
+const entries = (await getCollection('lain')).sort((a, b) => {
+	const aOrder = a.data.order ?? Number(a.id.match(/\d+/)?.[0] ?? 999);
+	const bOrder = b.data.order ?? Number(b.id.match(/\d+/)?.[0] ?? 999);
+	return aOrder - bOrder || a.id.localeCompare(b.id);
+});
+
+function entryTitle(id: string, title?: string) {
+	if (title) return title;
+	if (id === 'note') return '解説';
+	return id.replace(/^layer(\d+)$/, 'Layer $1');
+}
+---
+
+<Layout title="Scenario Experiments Lain">
+	<main class="collection-index">
+		<h1>Scenario Experiments Lain</h1>
+		<ul>
+			{
+				entries.map((entry) => (
+					<li>
+						<a href={`/scenario_experiments_lain/${entry.id}/`}>
+							{entryTitle(entry.id, entry.data.title)}
+						</a>
+					</li>
+				))
+			}
+		</ul>
+	</main>
+</Layout>
+
+<style>
+	.collection-index {
+		max-width: 48rem;
+		margin: 0 auto;
+		padding: 4rem 1.25rem;
+		font-family:
+			system-ui,
+			-apple-system,
+			BlinkMacSystemFont,
+			"Segoe UI",
+			sans-serif;
+	}
+
+	h1 {
+		margin: 0 0 2rem;
+		font-size: clamp(2rem, 6vw, 4rem);
+		line-height: 1;
+	}
+
+	ul {
+		display: grid;
+		gap: 0.75rem;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	a {
+		color: inherit;
+		text-decoration-thickness: 0.08em;
+		text-underline-offset: 0.18em;
+	}
+</style>
